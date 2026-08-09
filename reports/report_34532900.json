@@ -1,0 +1,27 @@
+{
+  "direct_answer": {
+    "question": "Which product has the highest sales in each region?",
+    "answer": "11 regions identified with their top-selling products. Bay Area Hub leads with iPhone 15 (24 units), followed by Motor City Plaza with Sony WH-1000XM5 (19 units), and Gateway West with TRX Resistance Bands (18 units). Electronics dominates with 4 regions, Apparel with 4 regions, and Beauty/Sports with 1-2 regions each.",
+    "why": "Aggregated total_sales_amount by region and product_name, then ranked products within each region using ROW_NUMBER() WINDOW function. The top-ranked product per region represents the highest sales volume. Bay Area Hub's iPhone 15 achieved the highest absolute sales (24 units) across all regions.",
+    "approach": "Used CTE with GROUP BY region, product_name, category and SUM(total_sales_amount), then applied ROW_NUMBER() OVER (PARTITION BY region ORDER BY SUM(total_sales_amount) DESC) to rank products within each region. Filtered for rank=1 to extract the top product per region, ordered by total_sales descending."
+  },
+  "charts": [
+    {
+      "type": "bar",
+      "title": "Highest-Selling Product by Region (Sales Volume)",
+      "x_column": "region",
+      "y_column": "total_sales",
+      "labels_column": "product_name",
+      "reason": "Horizontal bar chart directly shows which product dominates each region and enables easy comparison of sales volumes across regions. Product names are displayed as labels for clarity."
+    },
+    {
+      "type": "bar",
+      "title": "Top Products by Region - Category Distribution",
+      "x_column": "region",
+      "y_column": "total_sales",
+      "labels_column": "category",
+      "reason": "Stacked or grouped bar chart reveals category patterns: Electronics products lead in Bay Area Hub and Motor City Plaza, while Apparel dominates Downtown Flagship and Windy City Center, providing strategic insights into regional product preferences."
+    }
+  ],
+  "detailed_analysis": "The analysis reveals distinct regional product preferences across 11 store locations. Electronics products (iPhone 15, Sony WH-1000XM5) dominate high-performing regions like Bay Area Hub and Motor City Plaza, suggesting strong demand for premium tech products in urban hubs. Apparel products (Patagonia Fleece, Levi's 501 Jeans, Nike Air Max) are the top sellers in 4 regions, indicating consistent demand across multiple locations. Specialty categories like Beauty (Dyson Airwrap, CeraVe Moisturizer) and Sports (TRX Resistance Bands, CamelBak Water Bottle) show strong performance in specific regions, suggesting targeted customer bases. Bay Area Hub significantly outperforms other regions with 24 units of iPhone 15, indicating either higher foot traffic, stronger purchasing power, or effective marketing in that location. The Unassigned region (11 units of Levi's 501 Jeans) likely represents online or warehouse sales without geographic attribution. Regional product diversity suggests that a one-size-fits-all inventory strategy would be suboptimal; instead, region-specific product assortments aligned with these top performers could maximize sales and inventory efficiency."
+}

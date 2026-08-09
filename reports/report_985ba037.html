@@ -1,0 +1,130 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Executive Report - 985ba037</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+                color: #333;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+            }
+            .header h1 { margin: 0; font-size: 32px; }
+            .header p { margin: 10px 0 0 0; opacity: 0.9; }
+            .section {
+                background: white;
+                padding: 25px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .section h2 {
+                color: #667eea;
+                border-bottom: 3px solid #667eea;
+                padding-bottom: 10px;
+                margin-top: 0;
+            }
+            .answer-section {
+                background: #e8f4f8;
+                padding: 20px;
+                border-radius: 8px;
+                border-left: 4px solid #28a745;
+            }
+            .answer-section p { margin: 0; line-height: 1.6; font-size: 16px; color: #333; }
+            .approach-section { margin: 20px 0; }
+            .approach-section h3 { color: #667eea; font-size: 16px; margin: 20px 0 10px 0; }
+            .code-block {
+                background: #f5f5f5;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                padding: 15px;
+                overflow-x: auto;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                line-height: 1.4;
+                color: #333;
+                margin: 0 0 15px 0;
+            }
+            .code-block code { color: #667eea; }
+            .approach-section p { line-height: 1.6; color: #555; margin: 0 0 15px 0; }
+            .chart-container { margin: 20px 0; }
+            .footer {
+                text-align: center;
+                color: #999;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>&#128202; Executive Report</h1>
+            <p><strong>Business Question:</strong> which product is having highest sales in each region?
+</p>
+        </div>
+        <div class="section">
+            <h2>&#9989; Answer</h2>
+            
+    <div class="answer-section">
+        <p>The available Gold table only contains IDs with minimal sales data and no region or product names. Therefore, it is not possible to identify the highest selling product per region or even per store with meaningful labels. The only record found has product ID 15 but with null sales and no associated region information.</p>
+    </div>
+    
+        </div>
+        <div class="section">
+            <h2>&#128202; Approach &amp; Query</h2>
+            
+    <div class="approach-section">
+        <h3>Query Code</h3>
+        <pre class="code-block"><code>-- As no other schemas or tables are shown, we must base our analysis only on the gold table highest_sales_by_region
+-- However, the product and region details are not stored here, so sales and exact product details cannot be derived except from IDs
+-- Let's aggregate the sales data (pk_sales_data_bronze_silver_id) per store id (pk_stores_bronze_silver_id) and product id (pk_products_bronze_silver_id)
+-- Then determine the top product by sales for each store, and aggregate by region assuming store id maps region somehow (but no direct region info exists)
+-- Hence, the best we can do is top selling products per store
+WITH product_sales AS (
+  SELECT pk_stores_bronze_silver_id AS store_id,
+         pk_products_bronze_silver_id AS product_id,
+         SUM(pk_sales_data_bronze_silver_id) AS total_sales
+  FROM highest_sales_by_region
+  WHERE pk_products_bronze_silver_id IS NOT NULL
+  GROUP BY store_id, product_id
+), ranked_products AS (
+  SELECT store_id, product_id, total_sales,
+         ROW_NUMBER() OVER (PARTITION BY store_id ORDER BY total_sales DESC) AS rank
+  FROM product_sales
+)
+SELECT store_id, product_id, total_sales
+FROM ranked_products
+WHERE rank = 1
+ORDER BY store_id;</code></pre>
+        <h3>Query Description</h3>
+        <p>We loaded the Gold table and attempted aggregation of sales by product and store IDs. We tried ranking products by total sales per store as a proxy. However, due to missing data and no linked region or product dimension tables, the business question cannot be answered conclusively.</p>
+    </div>
+    
+        </div>
+        <div class="section">
+            <h2>&#128201; Visual Evidence</h2>
+            <div class="chart-container">
+                <p>No charts generated.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Generated by IDAMP (Intent-Driven Agentic Medallion Pipeline)</p>
+            <p>Report Date: 2026-07-21 22:06:38</p>
+        </div>
+    </body>
+    </html>
+    

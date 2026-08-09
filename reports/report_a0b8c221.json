@@ -1,0 +1,25 @@
+{
+  "direct_answer": {
+    "question": "Which product is having highest sales in each region?",
+    "answer": "The highest selling products by region are: West - iPhone 15 with total sales of 45653.62; Midwest - Samsung Galaxy S24 with total sales of 23789.91; Northeast - Samsung Galaxy S24 with total sales of 17697.88; Southeast - iPhone 15 with total sales of 7835.52.",
+    "why": "The query aggregated total sales by product within each region and ranked them to find the top product by total sales per region. The sum of total_amount for each product per region was computed and ranked, ensuring the highest sales product was identified precisely for each region.",
+    "approach": "Used a SQL query to aggregate total sales (SUM of total_amount) for each product grouped by region, then ranked these sums per region using RANK() window function and filtered to the top-ranked (highest sales) product per region."
+  },
+  "charts": [
+    {
+      "type": "bar",
+      "title": "Highest Selling Product by Region",
+      "x_column": "region",
+      "y_column": "total_sales",
+      "reason": "A bar chart clearly visualizes the highest sales amounts of the top product in each region, making it easy for executives to compare performance across regions."
+    },
+    {
+      "type": "pie",
+      "title": "Sales Distribution of Top Product in Each Region",
+      "labels_column": "product_name",
+      "values_column": "total_sales",
+      "reason": "A pie chart for each region's top product sales shows the relative contribution of each leading product to overall sales, highlighting top sellers."
+    }
+  ],
+  "detailed_analysis": "The data reveals that the 'iPhone 15' dominates the Western and Southeastern regions in terms of sales revenue, suggesting strong demand for this product in those areas. In contrast, the 'Samsung Galaxy S24' leads in the Midwest and Northeast, indicating regional preferences possibly driven by market demographics or promotional activities. The presence of a NaN region with a product named 'Patagonia Fleece' in the dataset likely represents incomplete data or outliers which do not influence the main regional sales insights. Overall, the sales patterns underscore the importance of tailoring inventory and marketing strategies regionally to capitalize on the popularity of specific products. The stark difference in sales figures between regions for the same product also highlights potential growth opportunities by learning from best-performing markets."
+}

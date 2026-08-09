@@ -1,0 +1,160 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Executive Report - 5033ca17</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+                color: #333;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+            }
+            .header h1 { margin: 0; font-size: 32px; }
+            .header p { margin: 10px 0 0 0; opacity: 0.9; }
+            .section {
+                background: white;
+                padding: 25px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .section h2 {
+                color: #667eea;
+                border-bottom: 3px solid #667eea;
+                padding-bottom: 10px;
+                margin-top: 0;
+            }
+            .answer-section {
+                background: #e8f4f8;
+                padding: 20px;
+                border-radius: 8px;
+                border-left: 4px solid #28a745;
+            }
+            .answer-section p { margin: 0; line-height: 1.6; font-size: 16px; color: #333; }
+            .approach-section { margin: 20px 0; }
+            .approach-section h3 { color: #667eea; font-size: 16px; margin: 20px 0 10px 0; }
+            .code-block {
+                background: #f5f5f5;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                padding: 15px;
+                overflow-x: auto;
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                line-height: 1.4;
+                color: #333;
+                margin: 0 0 15px 0;
+            }
+            .code-block code { color: #667eea; }
+            .approach-section p { line-height: 1.6; color: #555; margin: 0 0 15px 0; }
+            .chart-container { margin: 20px 0; }
+            .data-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+            .data-table th {
+                background-color: #667eea;
+                color: white;
+                padding: 10px 12px;
+                text-align: left;
+                font-weight: 600;
+            }
+            .data-table td {
+                padding: 8px 12px;
+                border-bottom: 1px solid #eee;
+                color: #333;
+            }
+            .data-table tr:nth-child(even) td { background-color: #f9f9fb; }
+            .data-table tr:hover td { background-color: #eef0fc; }
+            .insights-section {
+                background: #f9f9fb;
+                padding: 20px;
+                border-radius: 8px;
+                border-left: 4px solid #764ba2;
+                line-height: 1.7;
+                color: #444;
+            }
+            .footer {
+                text-align: center;
+                color: #999;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eee;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>&#128202; Executive Report</h1>
+            <p><strong>Business Question:</strong> which product has highest sales in each region?</p>
+        </div>
+        <div class="section">
+            <h2>&#9989; Answer</h2>
+            
+    <div class="answer-section">
+        <p>UNABLE TO ANSWER - Required data columns are missing from the Gold table</p>
+    </div>
+    
+        </div>
+        <div class="section">
+            <h2>&#128202; Approach &amp; Query</h2>
+            
+    <div class="approach-section">
+        <h3>Query Code</h3>
+        <pre class="code-block"><code>
+SELECT 
+  COUNT(DISTINCT product_id) as unique_products,
+  COUNT(DISTINCT product_name) as unique_product_names,
+  COUNT(DISTINCT category) as unique_categories,
+  COUNT(*) as total_rows
+FROM product_sales_by_region
+</code></pre>
+        <h3>Query Description</h3>
+        <p>Attempted to load and inspect product_sales_by_region.parquet. Confirmed via schema inspection and data load that region and sales amount columns do not exist. The table appears to be a product dimension/catalog table rather than a sales fact table.</p>
+    </div>
+    
+        </div>
+        <div class="section">
+            <h2>&#128201; Visual Evidence</h2>
+            <div class="chart-container">
+                <p>No charts generated.</p>
+            </div>
+        </div>
+        <div class="section">
+            <h2>&#128196; Query Results</h2>
+            
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>unique_products</th><th>unique_product_names</th><th>unique_categories</th><th>total_rows</th></tr></thead>
+        <tbody><tr><td>20</td><td>20</td><td>21</td><td>186</td></tr></tbody>
+      </table>
+    </div>
+    
+        </div>
+        <div class="section">
+            <h2>&#128270; Key Insights</h2>
+            <div class="insights-section">
+                The Gold table product_sales_by_region.parquet is misnamed or incomplete. It contains only product master data with 20 unique products across 21 category variations (likely due to category name inconsistencies like 'Sports' vs 'Sport'). The most frequently occurring products are Dyson Airwrap and Levi's 501 Jeans (12 occurrences each), followed by TRX Resistance Bands (11 occurrences). However, these counts represent data row frequency, not sales metrics. To answer the business question, you need a fact table that includes: (1) region/geography dimension, (2) sales_amount or revenue column, (3) transaction or order-level grain. Please verify the correct Gold table path or check if additional tables exist that contain the sales transaction data with regional and monetary dimensions.
+            </div>
+        </div>
+        <div class="footer">
+            <p>Generated by IDAMP (Intent-Driven Agentic Medallion Pipeline)</p>
+            <p>Report Date: 2026-08-09 22:32:53</p>
+        </div>
+    </body>
+    </html>
+    
