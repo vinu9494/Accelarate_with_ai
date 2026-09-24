@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏅 Agentic Medallion Pipeline
 
 > **Intent-Driven Agentic Data Engineering for Retail Sales Analytics**
@@ -549,3 +550,6 @@ MIT License — see `LICENSE` for details.
 ---
 
 *Built with LangChain · pandas · DuckDB · Plotly · Streamlit*
+=======
+# Accelarate_with_ai
+>>>>>>> b8eaf19cf7a598be506a1f10a0ae5b0123969eeb
