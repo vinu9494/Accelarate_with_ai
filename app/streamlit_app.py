@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 import pandas as pd
-from core.config import LANDING_DIR, STTM_DIR
+from core.config import LANDING_DIR, STTM_DIR, validate_llm_configuration
 from core.audit import AuditLogger
 from agents.orchestrator import (
     run_until_bronze_sttm,
@@ -35,6 +35,12 @@ from agents.orchestrator import (
     run_silver_to_gold_sttm,
     run_gold_and_report,
 )
+
+try:
+    validate_llm_configuration()
+except ValueError as exc:
+    st.error(str(exc))
+    st.stop()
 
 st.set_page_config(
     page_title="IDAMP - Intent-Driven Agentic Medallion Pipeline",

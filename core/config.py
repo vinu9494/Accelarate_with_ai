@@ -51,12 +51,38 @@ REPORTS_DIR = BASE_DIR / "reports"
 AUDIT_DIR = BASE_DIR / "audit_logs"
 CHROMA_DIR = BASE_DIR / ".chroma"
 
-# Anthropic Configuration
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5-20251001")
-LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "4096"))
 
+def _clean_env_value(value: str | None) -> str:
+    return (value or "").strip()
+
+
+PLACEHOLDER_API_KEYS = {
+    "your_api_key_here",
+    "your-anthropic-api-key-here",
+    "replace_me",
+    "changeme",
+    "placeholder",
+    "demo",
+}
+
+# Anthropic Configuration
+ANTHROPIC_API_KEY = _clean_env_value(os.getenv("ANTHROPIC_API_KEY"))
+ANTHROPIC_MODEL = _clean_env_value(os.getenv("ANTHROPIC_MODEL")) or "claude-3-5-sonnet-20241022"
+LLM_MAX_TOKENS = max(1024, int(os.getenv("LLM_MAX_TOKENS", "4096")))
 LLM_PROVIDER = "anthropic"
+
+
+def validate_llm_configuration() -> None:
+    """Fail fast with a clear message when the app is configured with a placeholder key."""
+    if not ANTHROPIC_API_KEY or ANTHROPIC_API_KEY.lower() in PLACEHOLDER_API_KEYS:
+        raise ValueError(
+            "Anthropic is not configured. Update the .env file with a real ANTHROPIC_API_KEY "
+            "before running the pipeline."
+        )
+
+    if not ANTHROPIC_MODEL:
+        raise ValueError("ANTHROPIC_MODEL is missing. Set it in the .env file.")
+
 
 # Ensure directories exist
 for d in [LANDING_DIR, PROFILES_DIR, STTM_DIR, BRONZE_DIR, SILVER_DIR, GOLD_DIR, REPORTS_DIR, AUDIT_DIR, CHROMA_DIR]:

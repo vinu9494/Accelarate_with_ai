@@ -392,13 +392,12 @@ def _make_sttm_tools(
             "CRITICAL RULES — follow exactly:\n"
             "1. source_column MUST be the EXACT column name from the listing above. "
             "Do NOT rename, abbreviate, or substitute any column name.\n"
-            "2. Map EVERY column in the listing — do not skip any column, including numeric columns "
-            "like total_amount, unit_price and geographic columns like region, city, state.\n"
+            "2. Map EVERY column in the listing — do not skip any column.\n"
             "3. First row per table: surrogate key (source_column='', target_column='pk_<stem>_silver_id', "
             "transformation_type='Indirect', transformation_logic='Auto-generated sequential surrogate primary key starting from 1').\n"
             "4. Apply null handling, type casting, date standardisation per column. Id columns: type cast only.\n"
-            "5. source_table must be the exact Bronze filename (e.g. 'products_bronze.parquet').\n"
-            "6. target_table must be '<stem>_silver' (e.g. 'products_silver').\n"
+            "5. source_table must be the exact Bronze filename as shown in the listing above.\n"
+            "6. target_table must be '<stem>_silver' where <stem> is the Bronze filename without extension and without '_bronze'.\n"
             "Return ONLY a JSON array. Each row: source_schema, source_table, source_column, "
             "target_schema, target_table, target_column, transformation_type, transformation_logic. No markdown."
         )
@@ -434,30 +433,43 @@ def _make_sttm_tools(
 
         context = _prepare_gold_context(silver_output_paths, silver_sttm_path)
 
+        # Rich context: table name + every column with dtype + 3 sample values
+        # so the LLM can identify geographic, numeric, and key columns from the
+        # actual data regardless of what the files are named.
         try:
-            context_summary = "\n".join(
-                f"Table: {t['filename']} | columns: {', '.join(t.get('columns', []))}"
-                for t in context
-            )
+            context_lines = []
+            for t in context:
+                col_details = []
+                for col in t.get("columns", []):
+                    dtype = t.get("dtypes", {}).get(col, "?")
+                    samples = [str(row.get(col, "")) for row in t.get("sample", [])[:3] if row.get(col) not in (None, "")]
+                    sample_str = f"  samples: {', '.join(samples)}" if samples else ""
+                    col_details.append(f"    {col} ({dtype}){sample_str}")
+                context_lines.append(f"Table: {t['filename']}\n" + "\n".join(col_details))
+            context_summary = "\n\n".join(context_lines)
         except Exception:
-            context_summary = json.dumps(context, default=str)[:1000]
+            context_summary = json.dumps(context, default=str)[:2000]
 
         inner_prompt = (
             "Generate a complete Gold STTM JSON array shaped for the business intent.\n"
             f"Business intent: {business_intent}\n"
-            f"Silver tables:\n{context_summary[:4000]}\n\n"
+            f"Silver tables (table name, column name, dtype, sample values):\n{context_summary[:5000]}\n\n"
             "CRITICAL RULES — follow exactly:\n"
-            "1. source_column MUST be the EXACT column name from the listing above.\n"
+            "1. source_column MUST be the EXACT column name from the listing above. "
+            "Do NOT invent, rename, or substitute any column name.\n"
             "2. First row: surrogate key (source_column='', target_column='pk_gold_id', "
             "transformation_type='Indirect', transformation_logic='Auto-generated sequential surrogate primary key starting from 1').\n"
-            "3. source_table must be the exact Silver table name (e.g. 'sales_data_silver').\n"
-            "4. Join Silver tables on matching key columns (e.g. store_id, product_id) where needed.\n"
-            "5. GEOGRAPHIC GROUPING: if the business intent involves regions or locations, "
-            "map the `region` column from stores_silver directly — do NOT use `store_name` as a region substitute.\n"
-            "6. REVENUE AGGREGATIONS: map pre-computed amount columns (e.g. `total_amount`) with SUM aggregation. "
-            "Do NOT write derived expressions like 'SUM(quantity * standard_price)' — "
-            "the ingestion engine cannot evaluate formula expressions and will only sum the source column as-is. "
-            "Always pick an already-computed column for monetary sums.\n"
+            "3. source_table must be the exact Silver table name as shown in the listing above.\n"
+            "4. JOINS: look for columns with matching names across tables (typically columns ending in _id). "
+            "Join on those shared key columns — do not assume any specific table or column name.\n"
+            "5. GEOGRAPHIC GROUPING: if the business intent involves regions, locations, or territories, "
+            "inspect the sample values above to identify which column contains geographic grouping data "
+            "(e.g. a column whose samples are region/territory/zone names). Use that column directly. "
+            "Do NOT substitute a place-name column (like a city or store name) for a region/territory column.\n"
+            "6. REVENUE AGGREGATIONS: inspect dtypes and sample values to identify the pre-computed numeric "
+            "column that represents sales/revenue/amount. Use SUM aggregation on that column. "
+            "Do NOT write derived expressions like 'SUM(a * b)' — "
+            "the ingestion engine sums only the source column as-is and cannot evaluate formulas.\n"
             "Return ONLY a JSON array. Each row: source_schema, source_table, source_column, "
             "target_schema, target_table, target_column, transformation_type, transformation_logic. No markdown."
         )

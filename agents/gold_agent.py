@@ -123,7 +123,7 @@ def _inspect_task(input_files: list[str], sttm_path: str) -> dict:
 
 
 def _apply_gold_rules(
-    input_files: list[str], sttm_path: str, run_id: str
+    input_files: list[str], sttm_path: str, run_id: str, business_intent: str = ""
 ) -> list[str]:
     """Load Silver tables, group STTM by target_table, apply joins/renames/aggs, write Gold Parquet."""
     audit = AuditLogger(run_id)
@@ -246,26 +246,30 @@ def _apply_gold_rules(
             if agg_only:
                 df = df.groupby(valid_group_by, dropna=False, as_index=False).agg(agg_only)
 
-        # Post-aggregation: if the STTM requests the top-1 per first group-by column
-        # (e.g. "identify product with max total sales per region"), keep only the row
-        # with the highest aggregated value per partition.
-        if valid_group_by and valid_agg_map:
+        # Post-aggregation top-1-per-group filter.
+        # Triggered when the business intent or any STTM rule asks for the
+        # highest/top/best/max item within each group — works for any dataset.
+        _TOP1_KEYWORDS = (
+            "top 1", "top-1", "highest", "most", "maximum", "max per",
+            "best", "leading", "winner", "rank 1", "top per", "top item",
+        )
+        _intent_lower = business_intent.lower()
+        _wants_top1 = any(kw in _intent_lower for kw in _TOP1_KEYWORDS)
+        if not _wants_top1 and valid_group_by and valid_agg_map:
             for _, rule in table_rules.iterrows():
                 _logic = str(rule.get("transformation_logic", "")).lower()
-                if any(kw in _logic for kw in (
-                    "identify product with max", "max total sales per region",
-                    "highest selling product", "highest sales per region",
-                    "product with highest", "top product per region",
-                )):
-                    _rank_col = next(iter(valid_agg_map), None)
-                    _partition_col = valid_group_by[0]
-                    if _rank_col and _rank_col in df.columns and _partition_col in df.columns:
-                        df = (
-                            df.loc[df.groupby(_partition_col)[_rank_col].idxmax()]
-                            .reset_index(drop=True)
-                        )
-                        print(f"[GOLD] Top-1-per-{_partition_col} filter on {_rank_col}: {len(df)} rows kept")
+                if any(kw in _logic for kw in _TOP1_KEYWORDS):
+                    _wants_top1 = True
                     break
+        if _wants_top1 and valid_group_by and valid_agg_map:
+            _rank_col = next(iter(valid_agg_map), None)
+            _partition_col = valid_group_by[0]
+            if _rank_col and _rank_col in df.columns and _partition_col in df.columns:
+                df = (
+                    df.loc[df.groupby(_partition_col)[_rank_col].idxmax()]
+                    .reset_index(drop=True)
+                )
+                print(f"[GOLD] Top-1-per-{_partition_col} filter on {_rank_col}: {len(df)} rows kept")
 
         target_columns = set(table_rules["target_column"].unique())
         columns_to_keep = [
@@ -305,7 +309,7 @@ def _apply_gold_rules(
 # ---------------------------------------------------------------------------
 
 def _make_gold_tools(
-    input_files: list[str], sttm_path: str, run_id: str
+    input_files: list[str], sttm_path: str, run_id: str, business_intent: str = ""
 ):
     """Returns inspect + ingestion tools bound to this run's parameters via closure."""
 
@@ -329,7 +333,7 @@ def _make_gold_tools(
         surrogate keys (pk_gold_id), and writes Gold Parquet artifacts.
         Returns a JSON list of output file paths.
         """
-        output_paths = _apply_gold_rules(input_files, sttm_path, run_id)
+        output_paths = _apply_gold_rules(input_files, sttm_path, run_id, business_intent)
         return json.dumps(output_paths)
 
     return inspect_task_tool, gold_ingestion_tool
@@ -373,7 +377,7 @@ def execute_gold(
     trace = AgentTrace("gold_agent", run_id)
     trace.set_input(input_files=input_files, sttm_path=sttm_path)
 
-    inspect_tool, ingestion_tool = _make_gold_tools(input_files, sttm_path, run_id)
+    inspect_tool, ingestion_tool = _make_gold_tools(input_files, sttm_path, run_id, task_description)
     llm = _make_llm()
 
     print("[GOLD] Running autonomous ReAct agent (anthropic)")
